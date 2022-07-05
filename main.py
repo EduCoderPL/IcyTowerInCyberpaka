@@ -3,13 +3,7 @@ import pygame
 from pygame.locals import *
 import random
 
-# CONSTANTS:
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 700
-LEFT_LIMIT = 100
-RIGHT_LIMIT = SCREEN_WIDTH - LEFT_LIMIT
-PLAYER_START_POSITION_Y = SCREEN_HEIGHT - 100
-DISTANCE_FROM_WALL = 5
+from constants import *
 
 # KEEP GAME IN MAX 60 FPS
 clock = pygame.time.Clock()
@@ -17,7 +11,7 @@ FPS = 60
 
 # IMPROVE GAME SPEED DURING GAME:
 TIME_TO_ACCELERATE = 30
-lastAccelerate = time.time()
+
 
 # SCORE
 score = 0
@@ -136,7 +130,7 @@ class Platform:
 
         if self.number % 10 == 0:
             centerPos = (self.x + self.width / 2 + offsetX, self.y + self.height / 2 + offsetY)
-            pygame.draw.rect(screen, (10, 10, 10), Rect(centerPos[0] - 10, centerPos[1] - 10, 30, 30))
+            pygame.draw.rect(screen, (10, 10, 10), Rect(centerPos[0] - 10, centerPos[1] - 10, 10 * len(str(self.number)) + 20, 30))
             img1 = fontPlatform.render(str(self.number), True, (200, 200, 255))
             screen.blit(img1, centerPos)
 
@@ -205,22 +199,12 @@ def draw_game():
     screen.blit(img1, (20, 20))
     screen.blit(hurryUpText, (300, hurryUpTextPosY))
 
-
-player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y- 200)
-
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
-
-platformList = []
-Platform.make_first_platforms()
-
-run = True
-while run:
-
-    # Zegar gry
-    clock.tick(FPS)
-    player_input()
-    game_logic()
+def manage_offset():
+    global offsetY
+    global lastAccelerate
+    global offsetVelocityY
+    global hurryUpTextPosY
+    global run
 
     # Przewijanie się ekranu po pierwszym większym skoku;
     if player.y < 100 and offsetY < 200:
@@ -239,11 +223,27 @@ while run:
 
     if player.y + offsetY > SCREEN_HEIGHT:
         run = False
+
     hurryUpTextPosY -= 1
 
-    Platform.manage_platforms()
 
-    # Rysowane obiektów na ekranie
+player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y- 200)
+
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
+
+platformList = []
+Platform.make_first_platforms()
+lastAccelerate = time.time()
+
+
+run = True
+while run:
+
+    player_input()
+    game_logic()
+    manage_offset()
+    Platform.manage_platforms()
     draw_game()
 
     # To jest TURBOWAŻNE I NIE USUWAJ TEGO!!!
@@ -253,5 +253,7 @@ while run:
 
     # To tworzy nową klatkę gry; :)
     pygame.display.update()
+    clock.tick(FPS)
 
 pygame.quit()
+
