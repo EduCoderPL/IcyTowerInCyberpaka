@@ -9,6 +9,7 @@ SCREEN_HEIGHT = 700
 LEFT_LIMIT = 100
 RIGHT_LIMIT = SCREEN_WIDTH - LEFT_LIMIT
 PLAYER_START_POSITION_Y = SCREEN_HEIGHT - 100
+DISTANCE_FROM_WALL = 5
 
 # KEEP GAME IN MAX 60 FPS
 clock = pygame.time.Clock()
@@ -42,20 +43,27 @@ class Player:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.image = pygame.image.load('Images/Hero.png')
-        self.rect = Rect(self.x, self.y, self.image.get_width(), self.image.get_height())
+
         self.velX = 0
         self.velY = 0
+
         self.canJump = False
-        self.angle = 0
         self.jumping = False
         self.rotating = False
 
+        self.image = pygame.image.load('Images/Hero.png')
+        self.angle = 0
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+
     def move(self):
-        self.velY += 0.5
+        self.lastX = self.x
+        self.lastY = self.y
+
+        self.velY += 0.8
 
         # Dodanie siły oporu:
-        self.velX *= 0.98
+        self.velX *= 0.97
         self.velY *= 0.98
 
         self.x += self.velX
@@ -66,15 +74,16 @@ class Player:
             self.x = LEFT_LIMIT
             self.velX *= -1
 
-        if self.x > RIGHT_LIMIT - self.image.get_width():
-            self.x = RIGHT_LIMIT - self.image.get_width()
+        if self.x > RIGHT_LIMIT - self.width:
+            self.x = RIGHT_LIMIT - self.width
             self.velX *= -1
 
     def check_collision(self, listOfPlatforms):
-        self.rect = Rect(self.x, self.y, self.image.get_width(), self.image.get_height())
+        self.rect = Rect(self.x, self.y, self.width, self.height)
+        toPlatformCollisionRect = Rect(self.lastX, self.lastY + self.height, self.width, abs(self.lastY - self.y))
         for platform in listOfPlatforms:
-            if self.rect.colliderect(platform.Rect) and self.velY > 0:
-                self.y = platform.y - self.image.get_height()
+            if toPlatformCollisionRect.colliderect(platform.rect) and self.velY > 0:
+                self.y = platform.y - self.height + 1
                 self.velY = 0
                 self.velX *= 0.95
                 self.canJump = True
@@ -88,6 +97,12 @@ class Player:
             self.angle += 10
         else:
             self.angle = 0
+
+    def jump(self):
+        player.velY = - (16 + 1.2 * abs(player.velX))
+        player.canJump = False
+        if player.velY < -25:
+            player.rotating = True
 
     def draw(self):
         screen.blit(pygame.transform.rotate(self.image, self.angle), (self.x + offsetX, self.y + offsetY))
@@ -104,26 +119,30 @@ class Platform:
         self.y = y
         self.image = pygame.image.load("Images/Platform.png")
 
+
         if self.number == 1 or self.number % 50 == 0:
             self.image = pygame.transform.scale(pygame.image.load("Images/Platform.png"),
                                                 (RIGHT_LIMIT - LEFT_LIMIT, self.image.get_height()))
             self.x = LEFT_LIMIT
 
-        self.Rect = Rect(self.x, self.y, self.image.get_width(), self.image.get_height() / 10)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.rect = Rect(self.x, self.y, self.width, self.height / 10)
+
 
     def draw(self):
 
         screen.blit(self.image, (self.x + offsetX, self.y + offsetY))
 
         if self.number % 10 == 0:
-            centerPos = (self.x + self.image.get_width() / 2 + offsetX, self.y + self.image.get_height() / 2 + offsetY)
+            centerPos = (self.x + self.width / 2 + offsetX, self.y + self.height / 2 + offsetY)
             pygame.draw.rect(screen, (10, 10, 10), Rect(centerPos[0] - 10, centerPos[1] - 10, 30, 30))
             img1 = fontPlatform.render(str(self.number), True, (200, 200, 255))
             screen.blit(img1, centerPos)
 
     @staticmethod
     def make_another_platform():
-        posX = random.randint(10 + LEFT_LIMIT, RIGHT_LIMIT - Platform.image.get_width() - 10)
+        posX = random.randint(DISTANCE_FROM_WALL + LEFT_LIMIT, RIGHT_LIMIT - Platform.image.get_width() - DISTANCE_FROM_WALL)
         posY = PLAYER_START_POSITION_Y - 100 * Platform.counter
         platformList.append(Platform(posX, posY))
 
@@ -157,11 +176,7 @@ class OffsetBackground:
 def player_input():
     keys = pygame.key.get_pressed()
     if keys[K_UP] and player.canJump:
-        player.velY = - (10 + 0.7 * abs(player.velX))
-        player.canJump = False
-        if player.velY < -18:
-            player.rotating = True
-
+        player.jump()
     if keys[K_LEFT]:
         player.velX -= 1
     if keys[K_RIGHT]:
@@ -191,7 +206,7 @@ def draw_game():
     screen.blit(hurryUpText, (300, hurryUpTextPosY))
 
 
-player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y)
+player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y- 200)
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
@@ -219,8 +234,8 @@ while run:
 
     offsetY += offsetVelocityY
 
-    if player.y + offsetY < 350:
-        offsetY += abs(player.y + offsetY - 350) / 30
+    if player.y + offsetY < 150:
+        offsetY += abs(player.y + offsetY - 150) / 20
 
     if player.y + offsetY > SCREEN_HEIGHT:
         run = False
