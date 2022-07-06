@@ -27,7 +27,7 @@ backImage = pygame.image.load('Images/BackWall.png')
 pygame.init()
 fontPlatform = pygame.font.SysFont('Arial', 14)
 fontScore = pygame.font.SysFont('Arial', 48)
-hurryUpText = fontScore.render("HURRY UP!!!", True, (200, 200, 0))
+
 
 click = False
 
@@ -40,10 +40,11 @@ class Drawable:
         self.width = self.image.get_width()
         self.height = self.image.get_height()
         self.angle = 0
-
+        self.rect = Rect(self.x, self.y, self.width, self.height)
 
     def draw(self):
-        Game.screen.blit(pygame.transform.rotate(self.image, self.angle), (self.x + Game.offsetX, self.y + Game.offsetY))
+        Game.screen.blit(pygame.transform.rotate(self.image, self.angle),
+                         (self.x + Game.offsetX, self.y + Game.offsetY))
 
 
 class Player(Drawable):
@@ -58,6 +59,8 @@ class Player(Drawable):
         self.rotating = False
 
         self.angle = 0
+        self.lastX = self.x
+        self.lastY = self.y
 
     def move(self):
         self.lastX = self.x
@@ -65,14 +68,12 @@ class Player(Drawable):
 
         self.velY += GRAVITY
 
-        # Dodanie siły oporu:
         self.velX *= 0.97
         self.velY *= 0.98
 
         self.x += self.velX
         self.y += self.velY
 
-        # Sprawdzanie, czy gracz nie wyszedł poza ekran;
         if self.x < LEFT_LIMIT:
             self.x = LEFT_LIMIT
             self.velX *= -1
@@ -130,7 +131,6 @@ class Platform(Drawable):
         self.height = self.image.get_height()
         self.rect = Rect(self.x, self.y, self.width, self.height / 10)
 
-
     def draw(self):
 
         super().draw()
@@ -146,22 +146,21 @@ class Platform(Drawable):
 class Game:
     offsetX = 0
     offsetY = 0
-    offsetVelocityY = 0
 
     platformList = []
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
 
     def __init__(self):
         self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 200)
-        pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
-
-
-
         self.lastAccelerate = time.time()
-        self.run = True
 
         self.make_first_platforms()
         self.hurryUpTextPosY = -50
+
+        self.run = True
+        self.hurryUpText = fontScore.render("HURRY UP!!!", True, (200, 200, 0))
+        self.offsetVelocityY = 0
 
     def make_another_platform(self):
         posX = random.randint(DISTANCE_FROM_WALL + LEFT_LIMIT,
@@ -193,17 +192,13 @@ class Game:
     def loop(self):
         self.player_input()
         self.game_logic()
-        self.manage_offset()
-        self.manage_platforms()
         self.draw_game()
 
-        # To jest TURBOWAŻNE I NIE USUWAJ TEGO!!!
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.run = False
                 sys.exit()
 
-        # To tworzy nową klatkę gry; :)
         pygame.display.update()
         clock.tick(FPS)
 
@@ -218,37 +213,39 @@ class Game:
 
     def game_logic(self):
         self.player.update()
+        self.manage_offset()
+        self.manage_platforms()
 
     def draw_game(self):
         self.screen.fill((0, 0, 30))
-
         self.drawTiled(LEFT_LIMIT, 0, backImage, 0.5)
 
         for platform in self.platformList:
             platform.draw()
 
         self.player.draw()
-
         self.drawTiled(0, 0, leftWallImage, 1.3)
         self.drawTiled(RIGHT_LIMIT, 0, rightWallImage, 1.3)
 
         # RYSOWANIE INTERFEJSU
         img1 = fontScore.render(str(score), True, (200, 200, 0))
         self.screen.blit(img1, (20, 20))
-        self.screen.blit(hurryUpText, (300, self.hurryUpTextPosY))
+
+        self.screen.blit(self.hurryUpText, (300, self.hurryUpTextPosY))
 
     def manage_offset(self):
         # Przewijanie się ekranu po pierwszym większym skoku;
-        if self.player.y < 100 and Game.offsetY < 200:
-            offsetVelocityY = 1
+        if self.player.y < 100 and self.offsetY < 200:
+            print("Rozpoczęcie przewijania się ekranu")
+            self.offsetVelocityY = 1
 
         # Przyspieszanie przewijania ekranu co określnony czas
-        if time.time() - self.lastAccelerate > TIME_TO_ACCELERATE and Game.offsetVelocityY > 0:
-            offsetVelocityY += 1
+        if time.time() - self.lastAccelerate > TIME_TO_ACCELERATE and self.offsetVelocityY > 0:
+            self.offsetVelocityY += 1
             self.lastAccelerate = time.time()
-            hurryUpTextPosY = SCREEN_HEIGHT + 100
+            self.hurryUpTextPosY = SCREEN_HEIGHT + 100
 
-        Game.offsetY += Game.offsetVelocityY
+        Game.offsetY += self.offsetVelocityY
 
         if self.player.y + Game.offsetY < 150:
             Game.offsetY += abs(self.player.y + Game.offsetY - 150) / 20
