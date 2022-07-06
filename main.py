@@ -7,16 +7,6 @@ from constants import *
 
 import sys
 
-# KEEP GAME IN MAX 60 FPS
-clock = pygame.time.Clock()
-FPS = 60
-
-# IMPROVE GAME SPEED DURING GAME:
-TIME_TO_ACCELERATE = 30
-
-# SCORE
-score = 0
-
 # OFFSET MOVEMENT
 
 # IMAGES:
@@ -29,16 +19,12 @@ fontPlatform = pygame.font.SysFont('Arial', 14)
 fontScore = pygame.font.SysFont('Arial', 48)
 
 
-click = False
-
-
 class Drawable:
+
     def __init__(self, x, y, image):
-        self.x = x
-        self.y = y
+        self.x, self.y = x, y
         self.image = pygame.image.load(image)
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
+        self.width, self.height = self.image.get_width(), self.image.get_height()
         self.angle = 0
         self.rect = Rect(self.x, self.y, self.width, self.height)
 
@@ -51,20 +37,14 @@ class Player(Drawable):
     def __init__(self, x, y):
         super().__init__(x, y, 'Images/Hero.png')
 
-        self.velX = 0
-        self.velY = 0
-
-        self.canJump = False
-        self.jumping = False
-        self.rotating = False
+        self.velX, self.velY = 0, 0
+        self.canJump, self.rotating = False, False
 
         self.angle = 0
-        self.lastX = self.x
-        self.lastY = self.y
+        self.lastX, self.lastY = self.x, self.y
 
     def move(self):
-        self.lastX = self.x
-        self.lastY = self.y
+        self.lastX, self.lastY = self.x, self.y
 
         self.velY += GRAVITY
 
@@ -127,9 +107,8 @@ class Platform(Drawable):
                                                 (RIGHT_LIMIT - LEFT_LIMIT, self.image.get_height()))
             self.x = LEFT_LIMIT
 
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
-        self.rect = Rect(self.x, self.y, self.width, self.height / 10)
+        self.width, self.height = self.image.get_width(), self.image.get_height()
+        self.rect = Rect(self.x, self.y, self.width, self.height)
 
     def draw(self):
 
@@ -162,6 +141,11 @@ class Game:
         self.hurryUpText = fontScore.render("HURRY UP!!!", True, (200, 200, 0))
         self.offsetVelocityY = 0
 
+        self.clock = pygame.time.Clock()
+
+        # SCORE
+        self.score = 0
+
     def make_another_platform(self):
         posX = random.randint(DISTANCE_FROM_WALL + LEFT_LIMIT,
                               RIGHT_LIMIT - Platform.image.get_width() - DISTANCE_FROM_WALL)
@@ -181,8 +165,7 @@ class Game:
         for platform in self.platformList:
             if platform.y + Game.offsetY > SCREEN_HEIGHT:
                 self.platformList.remove(platform)
-                global score
-                score += 10
+                self.score += 10
                 del platform
 
     def drawTiled(self, x, y, image, offsetScale=1.0):
@@ -200,7 +183,7 @@ class Game:
                 sys.exit()
 
         pygame.display.update()
-        clock.tick(FPS)
+        self.clock.tick(FPS)
 
     def player_input(self):
         keys = pygame.key.get_pressed()
@@ -228,7 +211,7 @@ class Game:
         self.drawTiled(RIGHT_LIMIT, 0, rightWallImage, 1.3)
 
         # RYSOWANIE INTERFEJSU
-        img1 = fontScore.render(str(score), True, (200, 200, 0))
+        img1 = fontScore.render(str(self.score), True, (200, 200, 0))
         self.screen.blit(img1, (20, 20))
 
         self.screen.blit(self.hurryUpText, (300, self.hurryUpTextPosY))
@@ -236,7 +219,6 @@ class Game:
     def manage_offset(self):
         # Przewijanie się ekranu po pierwszym większym skoku;
         if self.player.y < 100 and self.offsetY < 200:
-            print("Rozpoczęcie przewijania się ekranu")
             self.offsetVelocityY = 1
 
         # Przyspieszanie przewijania ekranu co określnony czas
