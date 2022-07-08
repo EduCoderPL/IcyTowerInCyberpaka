@@ -9,6 +9,6 @@ Zasady gry:
 Skacz coraz wyzej po platformach, uważając, żeby nie wypaść pod planszę - wtedy gra się kończy;
 
 Informacje: 
-Wersja Pythona: 3.9
-Jak odpalić? Uruchomić program w edytorze kodu;
+Wersja Pythona: 3.9 \
+Jak odpalić? Uruchomić program w edytorze kodu; \
 Gra wyłączy się w momencie, kiedy postać zejdzie pod dolną krawędź;
