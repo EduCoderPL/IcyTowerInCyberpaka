@@ -136,6 +136,10 @@ class ParticleStar(Drawable):
         self.x += self.velX
         self.y += self.velY
 
+        if self.y + Game.offsetY > SCREEN_HEIGHT:
+            Game.starList.remove(self)
+            del self
+
     def draw(self):
         super().draw()
 
