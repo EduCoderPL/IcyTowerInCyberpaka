@@ -260,7 +260,7 @@ class Game:
         self.screen.blit(self.hurryUpText, (300, self.hurryUpTextPosY))
 
     def manage_offset(self):
-        # Przewijanie się ekranu po pierwszym większym skoku;
+        # Start Scroll Screen after first bigger jump
         if self.player.y < 100 and self.offsetY < 200:
             self.offsetVelocityY = 1
 
