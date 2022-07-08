@@ -1,6 +1,7 @@
 import time
 import pygame
 from pygame.locals import *
+from pygame import mixer
 import random
 
 from constants import *
@@ -40,6 +41,7 @@ class Player(Drawable):
 
         self.angle = 0
         self.lastX, self.lastY = self.x, self.y
+        self.jumpSounds = (pygame.mixer.Sound("Audio/Light_Jump.wav"), pygame.mixer.Sound("Audio/Hard_Jump.wav"))
 
     def move(self):
         self.lastX, self.lastY = self.x, self.y
@@ -61,6 +63,7 @@ class Player(Drawable):
             self.velX *= -1
 
     def check_collision(self, listOfPlatforms):
+        self.canJump = False
         self.rect = Rect(self.x, self.y, self.width, self.height)
         toPlatformCollisionRect = Rect(self.lastX, self.lastY + self.height, self.width, abs(self.lastY - self.y))
         for platform in listOfPlatforms:
@@ -87,6 +90,9 @@ class Player(Drawable):
         self.canJump = False
         if self.velY < -25:
             self.rotating = True
+            mixer.Sound.play(self.jumpSounds[1])
+        else:
+            mixer.Sound.play(self.jumpSounds[0])
 
     def draw(self):
         super().draw()
@@ -121,6 +127,7 @@ class Platform(Drawable):
             img1 = fontPlatform.render(str(self.number), True, (200, 200, 255))
             Game.screen.blit(img1, centerPos)
 
+
 class ParticleStar(Drawable):
     def __init__(self, x, y, startVelX, startVelY):
         super().__init__(x, y, f'Images/Star_{random.randint(1, 3)}.png')
@@ -128,7 +135,7 @@ class ParticleStar(Drawable):
         self.velX, self.velY = startVelX + random.randint(-5, 5), startVelY + random.randint(-5, 5)
 
     def move(self):
-        self.velY += GRAVITY/5
+        self.velY += GRAVITY / 5
 
         self.velX *= 0.95
         self.velY *= 0.94
@@ -144,7 +151,6 @@ class ParticleStar(Drawable):
         super().draw()
 
 
-
 class Game:
     offsetX = 0
     offsetY = 0
@@ -154,8 +160,15 @@ class Game:
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
 
+    pygame.mixer.init()
+    mixer.music.set_volume(0.3)
+    mixer.music.load('Audio/TestMusic.mp3')
+
+    mixer.music.play(-1)
+
+
     def __init__(self):
-        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 200)
+        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100)
         self.lastAccelerate = time.time()
 
         self.make_first_platforms()
