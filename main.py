@@ -7,8 +7,6 @@ from constants import *
 
 import sys
 
-# OFFSET MOVEMENT
-
 # IMAGES:
 leftWallImage = pygame.image.load('Images/LeftWall.png')
 rightWallImage = pygame.transform.flip(leftWallImage, True, False)
@@ -79,6 +77,8 @@ class Player(Drawable):
 
         if self.rotating:
             self.angle += 10
+            for i in range(3):
+                Game.starList.append(ParticleStar(self.x, self.y, self.velX, self.velY))
         else:
             self.angle = 0
 
@@ -121,12 +121,32 @@ class Platform(Drawable):
             img1 = fontPlatform.render(str(self.number), True, (200, 200, 255))
             Game.screen.blit(img1, centerPos)
 
+class ParticleStar(Drawable):
+    def __init__(self, x, y, startVelX, startVelY):
+        super().__init__(x, y, f'Images/Star_{random.randint(1, 3)}.png')
+
+        self.velX, self.velY = startVelX + random.randint(-5, 5), startVelY + random.randint(-5, 5)
+
+    def move(self):
+        self.velY += GRAVITY/5
+
+        self.velX *= 0.95
+        self.velY *= 0.94
+
+        self.x += self.velX
+        self.y += self.velY
+
+    def draw(self):
+        super().draw()
+
+
 
 class Game:
     offsetX = 0
     offsetY = 0
 
     platformList = []
+    starList = []
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
 
@@ -198,6 +218,8 @@ class Game:
         self.player.update()
         self.manage_offset()
         self.manage_platforms()
+        for star in self.starList:
+            star.move()
 
     def draw_game(self):
         self.screen.fill((0, 0, 30))
@@ -207,6 +229,10 @@ class Game:
             platform.draw()
 
         self.player.draw()
+
+        for star in self.starList:
+            star.draw()
+
         self.drawTiled(0, 0, leftWallImage, 1.3)
         self.drawTiled(RIGHT_LIMIT, 0, rightWallImage, 1.3)
 
