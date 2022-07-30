@@ -151,6 +151,57 @@ class ParticleStar(Drawable):
         super().draw()
 
 
+class Button:
+    def __init__(self, text, width, height, pos, elevation, textSize):
+        self.pressed = False
+        self.clicked = False
+
+        self.elevation = elevation
+        self.dynamicElevation = elevation
+        self.originalYPosition = pos[1]
+
+        self.topRect = pygame.Rect(pos, (width, height))
+        self.topColor = "#475F77"
+
+        self.bottomRect = pygame.Rect(pos, (width, height))
+        self.bottomColor = "#354B5E"
+        self.FONT = pygame.font.SysFont("comicsans", textSize)
+
+        self.textSurf = self.FONT.render(f"  {text}  ", True, "#FFFFFF")
+        self.textRect = self.textSurf.get_rect(center=self.topRect.center)
+
+    def draw(self):
+        self.topRect.y = self.originalYPosition - self.dynamicElevation
+        self.textRect.center = self.topRect.center
+
+        self.bottomRect.midtop = self.topRect.midtop
+        self.bottomRect.height = self.topRect.height + self.dynamicElevation
+
+        pygame.draw.rect(Game.screen, self.bottomColor, self.bottomRect, border_radius=3)
+        pygame.draw.rect(Game.screen, self.topColor, self.topRect, border_radius=3)
+        Game.screen.blit(self.textSurf, self.textRect)
+        self.check_click()
+
+    def check_click(self):
+        mousePos = pygame.mouse.get_pos()
+        if self.topRect.collidepoint(mousePos):
+            self.topColor = '#D74B4B'
+            if self.clicked:
+                self.clicked = False
+            if pygame.mouse.get_pressed()[0]:
+                self.dynamicElevation = 0
+                if not self.pressed:
+                    self.clicked = True
+                self.pressed = True
+            elif self.pressed:
+                self.pressed = False
+            else:
+                self.dynamicElevation = self.elevation
+        else:
+
+            self.topColor = "#475F77"
+
+
 class Game:
     offsetX = 0
     offsetY = 0
@@ -165,7 +216,6 @@ class Game:
     mixer.music.load('Audio/TestMusic.mp3')
 
     mixer.music.play(-1)
-
 
     def __init__(self):
         self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100)
@@ -193,6 +243,7 @@ class Game:
         for i in range(11):
             self.make_another_platform()
 
+
     def manage_platforms(self):
         # Dodawanie platform
         if self.player.y < 1500 - 100 * Platform.counter:
@@ -209,7 +260,26 @@ class Game:
         self.screen.blit(image, (x, y + (offsetScale * Game.offsetY) % image.get_height()))
         self.screen.blit(image, (x, y - image.get_height() + ((offsetScale * Game.offsetY) % image.get_height())))
 
-    def loop(self):
+    def start_game(self):
+        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100)
+        self.lastAccelerate = time.time()
+        Game.offsetX = 0
+        Game.offsetY = 0
+        Game.platformList = []
+        Platform.counter = 0
+        self.make_first_platforms()
+        self.hurryUpTextPosY = -50
+
+        self.offsetVelocityY = 0
+
+        # SCORE
+        self.score = 0
+        self.run = True
+
+
+        Game.starList = []
+
+    def game_loop(self):
         self.player_input()
         self.game_logic()
         self.draw_game()
@@ -280,10 +350,51 @@ class Game:
 
         self.hurryUpTextPosY -= 1
 
+    def main(self):
+        self.start_game()
+        while self.run:
+            self.game_loop()
+        self.menu()
+
+    def menu(self):
+        menuButtons = []
+        menuButtons.append(Button("Start", 500, 100, (SCREEN_WIDTH / 2 - 250, SCREEN_HEIGHT / 2 - 300 + 40), 6, 32))
+        menuButtons.append(Button("Options", 500, 100, (SCREEN_WIDTH / 2 - 250, SCREEN_HEIGHT / 2 - 300 + 150), 6, 32))
+        menuButtons.append(Button("Quit", 500, 100, (SCREEN_WIDTH / 2 - 250, SCREEN_HEIGHT / 2 - 300 + 260), 6, 32))
+
+        randomPosList = []
+        for i in range(5):
+            randomPos = (random.randint(50, SCREEN_WIDTH - 50), random.randint(50, SCREEN_HEIGHT - 50))
+            randomPosList.append(randomPos)
+
+        while True:
+
+            self.screen.fill((random.randint(0, 10), 0, 0))
+
+            for i in range(5):
+                self.screen.blit(pygame.image.load('Images/BigPanda.png'), randomPosList[i])
+
+            for button in menuButtons:
+                button.draw()
+
+
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+            if menuButtons[0].clicked:
+                self.main()
+            if menuButtons[1].clicked:
+                pass
+            if menuButtons[2].clicked:
+                pygame.quit()
+
+            self.clock.tick(FPS)
+            pygame.display.update()
+
 
 if __name__ == "__main__":
     game = Game()
 
-    while game.run:
-        game.loop()
-    pygame.quit()
+    game.menu()
