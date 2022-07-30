@@ -34,7 +34,7 @@ class Drawable:
 
 class Player(Drawable):
     def __init__(self, x, y):
-        super().__init__(x, y, 'Images/Hero.png')
+        super().__init__(x, y, 'Images/Panda.png')
 
         self.velX, self.velY = 0, 0
         self.canJump, self.rotating = False, False
