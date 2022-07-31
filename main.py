@@ -20,9 +20,9 @@ fontScore = pygame.font.SysFont('Arial', 48)
 
 class Drawable:
 
-    def __init__(self, x, y, image):
+    def __init__(self, x, y, imageLocation):
         self.x, self.y = x, y
-        self.image = pygame.image.load(image)
+        self.image = pygame.image.load(imageLocation)
         self.width, self.height = self.image.get_width(), self.image.get_height()
         self.angle = 0
         self.rect = Rect(self.x, self.y, self.width, self.height)
@@ -33,15 +33,15 @@ class Drawable:
 
 
 class Player(Drawable):
-    def __init__(self, x, y):
-        super().__init__(x, y, 'Images/Panda.png')
+    def __init__(self, x, y, imageLocation="Images/Panda.png"):
+        super().__init__(x, y, imageLocation)
 
-        self.velX, self.velY = 0, 0
+        self.velX = self.velY = self.angle = 0
         self.canJump, self.rotating = False, False
 
-        self.angle = 0
         self.lastX, self.lastY = self.x, self.y
         self.jumpSounds = (pygame.mixer.Sound("Audio/Light_Jump.wav"), pygame.mixer.Sound("Audio/Hard_Jump.wav"))
+
 
     def move(self):
         self.lastX, self.lastY = self.x, self.y
@@ -154,7 +154,8 @@ class ParticleStar(Drawable):
 class Button:
     def __init__(self, text, width, height, pos, elevation, textSize):
         self.pressed = False
-        self.clicked = False
+        self.unpressed = False
+
 
         self.elevation = elevation
         self.dynamicElevation = elevation
@@ -186,20 +187,19 @@ class Button:
         mousePos = pygame.mouse.get_pos()
         if self.topRect.collidepoint(mousePos):
             self.topColor = '#D74B4B'
-            if self.clicked:
-                self.clicked = False
             if pygame.mouse.get_pressed()[0]:
                 self.dynamicElevation = 0
-                if not self.pressed:
-                    self.clicked = True
                 self.pressed = True
-            elif self.pressed:
-                self.pressed = False
             else:
                 self.dynamicElevation = self.elevation
+                if self.unpressed:
+                    self.unpressed = False
+                if self.pressed:
+                    self.pressed = False
+                    self.unpressed = True
         else:
-
-            self.topColor = "#475F77"
+            self.dynamicElevation = self.elevation
+            self.topColor = '#475F77'
 
 
 class Game:
@@ -208,6 +208,7 @@ class Game:
 
     platformList = []
     starList = []
+
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
 
@@ -218,6 +219,7 @@ class Game:
     mixer.music.play(-1)
 
     def __init__(self):
+        self.playerImage = 'Images/Panda.png'
         self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100)
         self.lastAccelerate = time.time()
 
@@ -243,7 +245,6 @@ class Game:
         for i in range(11):
             self.make_another_platform()
 
-
     def manage_platforms(self):
         # Dodawanie platform
         if self.player.y < 1500 - 100 * Platform.counter:
@@ -261,7 +262,7 @@ class Game:
         self.screen.blit(image, (x, y - image.get_height() + ((offsetScale * Game.offsetY) % image.get_height())))
 
     def start_game(self):
-        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100)
+        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100, self.playerImage)
         self.lastAccelerate = time.time()
         Game.offsetX = 0
         Game.offsetY = 0
@@ -276,7 +277,6 @@ class Game:
         self.score = 0
         self.run = True
 
-
         Game.starList = []
 
     def game_loop(self):
@@ -287,6 +287,7 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.run = False
+                pygame.quit()
                 sys.exit()
 
         pygame.display.update()
@@ -377,18 +378,49 @@ class Game:
             for button in menuButtons:
                 button.draw()
 
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
 
+            if menuButtons[0].unpressed:
+                self.main()
+            if menuButtons[1].unpressed:
+                self.options()
+            if menuButtons[2].unpressed:
+                pygame.quit()
+
+            self.clock.tick(FPS)
+            pygame.display.update()
+
+    def options(self):
+        menuButtons = []
+        menuButtons.append(Button("Pandeusz", 500, 60, (SCREEN_WIDTH / 2 - 350, SCREEN_HEIGHT / 2 - 300 + 40), 6, 32))
+        menuButtons.append(Button("Stickman", 500, 60, (SCREEN_WIDTH / 2 - 350, SCREEN_HEIGHT / 2 - 300 + 120), 6, 32))
+        menuButtons.append(
+            Button("CyberPakuś", 500, 60, (SCREEN_WIDTH / 2 - 350, SCREEN_HEIGHT / 2 - 300 + 200), 6, 32))
+        menuButtons.append(Button("Back", 500, 60, (SCREEN_WIDTH / 2 - 350, SCREEN_HEIGHT / 2 - 300 + 280), 6, 32))
+
+        while True:
+
+            self.screen.fill((random.randint(0, 10), 0, 0))
+
+            for button in menuButtons:
+                button.draw()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
+                    sys.exit()
 
-            if menuButtons[0].clicked:
-                self.main()
-            if menuButtons[1].clicked:
-                pass
-            if menuButtons[2].clicked:
-                pygame.quit()
+            if menuButtons[0].unpressed:
+                self.playerImage = "Images/Panda.png"
+            if menuButtons[1].unpressed:
+                self.playerImage = "Images/Stickman.png"
+            if menuButtons[2].unpressed:
+                self.playerImage = "Images/Cyberpakuś.png"
+            if menuButtons[3].unpressed:
+                self.menu()
 
             self.clock.tick(FPS)
             pygame.display.update()
