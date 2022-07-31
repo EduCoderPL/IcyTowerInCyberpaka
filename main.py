@@ -408,6 +408,9 @@ class Game:
             for button in menuButtons:
                 button.draw()
 
+            self.player.x, self.player.y = SCREEN_WIDTH - 100, 100
+            self.player.draw()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -421,6 +424,8 @@ class Game:
                 self.playerImage = "Images/Cyberpakuś.png"
             if menuButtons[3].unpressed:
                 self.menu()
+
+            self.player.image = pygame.image.load(self.playerImage)
 
             self.clock.tick(FPS)
             pygame.display.update()
