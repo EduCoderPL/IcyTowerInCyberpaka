@@ -7,6 +7,8 @@ import random
 from Button import Button
 from constants import *
 
+from Drawables import *
+
 import sys
 
 # IMAGES:
@@ -19,161 +21,17 @@ fontPlatform = pygame.font.SysFont('Arial', 14)
 fontScore = pygame.font.SysFont('Arial', 48)
 
 
-class Drawable:
-
-    def __init__(self, x, y, imageLocation):
-        self.x, self.y = x, y
-        self.image = pygame.image.load(imageLocation)
-        self.width, self.height = self.image.get_width(), self.image.get_height()
-        self.angle = 0
-        self.rect = Rect(self.x, self.y, self.width, self.height)
-
-    def draw(self):
-        Game.screen.blit(pygame.transform.rotate(self.image, self.angle),
-                         (self.x + Game.offsetX, self.y + Game.offsetY))
-
-
-class Player(Drawable):
-    def __init__(self, x, y, imageLocation="Images/Panda.png"):
-        super().__init__(x, y, imageLocation)
-
-        self.velX = self.velY = self.angle = 0
-        self.canJump, self.rotating = False, False
-
-        self.lastX, self.lastY = self.x, self.y
-        self.jumpSounds = (pygame.mixer.Sound("Audio/Light_Jump.wav"), pygame.mixer.Sound("Audio/Hard_Jump.wav"))
-
-
-    def move(self):
-        self.lastX, self.lastY = self.x, self.y
-
-        self.velY += GRAVITY
-
-        self.velX *= 0.97
-        self.velY *= 0.98
-
-        self.x += self.velX
-        self.y += self.velY
-
-        if self.x < LEFT_LIMIT:
-            self.x = LEFT_LIMIT
-            self.velX *= -1
-
-        if self.x > RIGHT_LIMIT - self.width:
-            self.x = RIGHT_LIMIT - self.width
-            self.velX *= -1
-
-    def check_collision(self, listOfPlatforms):
-        self.canJump = False
-        self.rect = Rect(self.x, self.y, self.width, self.height)
-        toPlatformCollisionRect = Rect(self.lastX, self.lastY + self.height, self.width, abs(self.lastY - self.y))
-        for platform in listOfPlatforms:
-            if toPlatformCollisionRect.colliderect(platform.rect) and self.velY > 0:
-                self.y = platform.y - self.height + 1
-                self.velY = 0
-                self.velX *= 0.95
-                self.canJump = True
-                self.rotating = False
-
-    def update(self):
-        self.move()
-        self.check_collision(Game.platformList)
-
-        if self.rotating:
-            self.angle += 10
-            for i in range(3):
-                Game.starList.append(ParticleStar(self.x, self.y, self.velX, self.velY))
-        else:
-            self.angle = 0
-
-    def jump(self):
-        self.velY = - (16 + 1.2 * abs(self.velX))
-        self.canJump = False
-        if self.velY < -25:
-            self.rotating = True
-            mixer.Sound.play(self.jumpSounds[1])
-        else:
-            mixer.Sound.play(self.jumpSounds[0])
-
-    def draw(self):
-        super().draw()
-
-
-class Platform(Drawable):
-    image = pygame.image.load("Images/Platform.png")
-    counter = 0
-
-    def __init__(self, x, y):
-        Platform.counter += 1
-        self.number = Platform.counter
-
-        super().__init__(x, y, "Images/Platform.png")
-
-        if self.number == 1 or self.number % 50 == 0:
-            self.image = pygame.transform.scale(pygame.image.load("Images/Platform.png"),
-                                                (RIGHT_LIMIT - LEFT_LIMIT, self.image.get_height()))
-            self.x = LEFT_LIMIT
-
-        self.width, self.height = self.image.get_width(), self.image.get_height()
-        self.rect = Rect(self.x, self.y, self.width, self.height)
-
-    def draw(self):
-
-        super().draw()
-
-        if self.number % 10 == 0:
-            centerPos = (self.x + self.width / 2 + Game.offsetX, self.y + self.height / 2 + Game.offsetY)
-            pygame.draw.rect(Game.screen, (10, 10, 10),
-                             Rect(centerPos[0] - 10, centerPos[1] - 10, 10 * len(str(self.number)) + 20, 30))
-            img1 = fontPlatform.render(str(self.number), True, (200, 200, 255))
-            Game.screen.blit(img1, centerPos)
-
-
-class ParticleStar(Drawable):
-    def __init__(self, x, y, startVelX, startVelY):
-        super().__init__(x, y, f'Images/Star_{random.randint(1, 3)}.png')
-
-        self.velX, self.velY = startVelX + random.randint(-5, 5), startVelY + random.randint(-5, 5)
-
-    def move(self):
-        self.velY += GRAVITY / 5
-
-        self.velX *= 0.95
-        self.velY *= 0.94
-
-        self.x += self.velX
-        self.y += self.velY
-
-        if self.y + Game.offsetY > SCREEN_HEIGHT:
-            Game.starList.remove(self)
-            del self
-
-    def draw(self):
-        super().draw()
-
-
-
-
-
 class Game:
-    offsetX = 0
-    offsetY = 0
-
-    platformList = []
     starList = []
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
 
-    pygame.mixer.init()
-    mixer.music.set_volume(0.3)
-    mixer.music.load('Audio/TestMusic.mp3')
-
-    mixer.music.play(-1)
-
     def __init__(self):
+        self.offsetX = self.offsetY = 0
+        self.platformList = []
         self.playerImage = 'Images/Panda.png'
-        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100)
+        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100, self.playerImage, self)
         self.lastAccelerate = time.time()
 
         self.make_first_platforms()
@@ -188,49 +46,50 @@ class Game:
         # SCORE
         self.score = 0
 
+        self.audioMixer = pygame.mixer
+        self.audioMixer.init()
+        self.audioMixer.music.set_volume(0.3)
+        self.audioMixer.music.load('Audio/TestMusic.mp3')
+        self.audioMixer.music.play(-1)
+
     def make_another_platform(self):
         posX = random.randint(DISTANCE_FROM_WALL + LEFT_LIMIT,
                               RIGHT_LIMIT - Platform.image.get_width() - DISTANCE_FROM_WALL)
         posY = PLAYER_START_POSITION_Y - 100 * Platform.counter
-        self.platformList.append(Platform(posX, posY))
+        self.platformList.append(Platform(posX, posY, self))
 
     def make_first_platforms(self):
         for i in range(11):
             self.make_another_platform()
 
     def manage_platforms(self):
-        # Dodawanie platform
         if self.player.y < 1500 - 100 * Platform.counter:
             self.make_another_platform()
 
-        # Usuwanie platform
         for platform in self.platformList:
-            if platform.y + Game.offsetY > SCREEN_HEIGHT:
+            if platform.y + self.offsetY > SCREEN_HEIGHT:
                 self.platformList.remove(platform)
                 self.score += 10
                 del platform
 
     def drawTiled(self, x, y, image, offsetScale=1.0):
-        self.screen.blit(image, (x, y + (offsetScale * Game.offsetY) % image.get_height()))
-        self.screen.blit(image, (x, y - image.get_height() + ((offsetScale * Game.offsetY) % image.get_height())))
+        self.screen.blit(image, (x, y + (offsetScale * self.offsetY) % image.get_height()))
+        self.screen.blit(image, (x, y - image.get_height() + ((offsetScale * self.offsetY) % image.get_height())))
 
     def start_game(self):
-        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100, self.playerImage)
+        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100, self.playerImage, self)
         self.lastAccelerate = time.time()
-        Game.offsetX = 0
-        Game.offsetY = 0
-        Game.platformList = []
+        self.offsetX = 0
+        self.offsetY = 0
+        self.platformList = []
+        self.starList = []
         Platform.counter = 0
         self.make_first_platforms()
         self.hurryUpTextPosY = -50
-
         self.offsetVelocityY = 0
 
-        # SCORE
         self.score = 0
         self.run = True
-
-        Game.starList = []
 
     def game_loop(self):
         self.player_input()
@@ -267,12 +126,12 @@ class Game:
         self.drawTiled(LEFT_LIMIT, 0, backImage, 0.5)
 
         for platform in self.platformList:
-            platform.draw()
+            platform.draw(self)
 
-        self.player.draw()
+        self.player.draw(self)
 
         for star in self.starList:
-            star.draw()
+            star.draw(self)
 
         self.drawTiled(0, 0, leftWallImage, 1.3)
         self.drawTiled(RIGHT_LIMIT, 0, rightWallImage, 1.3)
@@ -294,59 +153,69 @@ class Game:
             self.lastAccelerate = time.time()
             self.hurryUpTextPosY = SCREEN_HEIGHT + 100
 
-        Game.offsetY += self.offsetVelocityY
+        self.offsetY += self.offsetVelocityY
 
-        if self.player.y + Game.offsetY < 150:
-            Game.offsetY += abs(self.player.y + Game.offsetY - 150) / 20
+        if self.player.y + self.offsetY < 150:
+            self.offsetY += abs(self.player.y + self.offsetY - 150) / 20
 
-        if self.player.y + Game.offsetY > SCREEN_HEIGHT:
+        if self.player.y + self.offsetY > SCREEN_HEIGHT:
             self.run = False
 
         self.hurryUpTextPosY -= 1
 
-    def main(self):
+    def play_game_scene(self):
         self.start_game()
         while self.run:
             self.game_loop()
-        self.menu()
+        # self.menu()
 
-    def menu(self):
+    def play_menu_scene(self):
+        Game.offsetY = 0
+        self.player.angle = 0
         menuButtons = []
-        menuButtons.append(Button("Start", 500, 100, (SCREEN_WIDTH / 2 - 250, SCREEN_HEIGHT / 2 - 300 + 40), 6, 32))
-        menuButtons.append(Button("Options", 500, 100, (SCREEN_WIDTH / 2 - 250, SCREEN_HEIGHT / 2 - 300 + 150), 6, 32))
-        menuButtons.append(Button("Quit", 500, 100, (SCREEN_WIDTH / 2 - 250, SCREEN_HEIGHT / 2 - 300 + 260), 6, 32))
+
+        menuButtons.append(Button("Start", 400, 80, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 - 200 + 40), 6, 32))
+        menuButtons.append(Button("Options", 400, 80, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 - 200 + 150), 6, 32))
+        menuButtons.append(Button("Quit", 400, 80, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 - 200 + 260), 6, 32))
 
         randomPosList = []
         for i in range(5):
-            randomPos = (random.randint(50, SCREEN_WIDTH - 50), random.randint(50, SCREEN_HEIGHT - 50))
+            randomPos = (random.randint(50, SCREEN_WIDTH - 150), random.randint(150, SCREEN_HEIGHT - 50))
             randomPosList.append(randomPos)
+        run = True
+        while run:
 
-        while True:
+            self.screen.fill((75, 192, 219))
 
-            self.screen.fill((random.randint(0, 10), 0, 0))
+            self.screen.blit(pygame.image.load('Images/BigPanda.png'), (50, 100))
+            self.screen.blit(pygame.image.load('Images/BigPanda.png'), (SCREEN_WIDTH - 300, 100))
 
-            for i in range(5):
-                self.screen.blit(pygame.image.load('Images/BigPanda.png'), randomPosList[i])
+            self.screen.blit(pygame.image.load('Images/Cyberpaka Big.png'), (50, 300))
+            self.screen.blit(pygame.image.load('Images/Cyberpaka Big.png'), (SCREEN_WIDTH - 300, 300))
+
+            self.screen.blit(pygame.transform.rotozoom(pygame.image.load('Images/IcyTowerText.png'), 3, 1.), (200, 30))
+            self.screen.blit(pygame.image.load('Images/cyberpakaText.png'), (250, 110))
 
             for button in menuButtons:
                 button.draw(self.screen)
+
+            if menuButtons[0].keyUp:
+                self.play_game_scene()
+            if menuButtons[1].keyUp:
+                self.play_options_scene()
+            if menuButtons[2].keyUp:
+                pygame.quit()
+                sys.exit()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
-            if menuButtons[0].unpressed:
-                self.main()
-            if menuButtons[1].unpressed:
-                self.options()
-            if menuButtons[2].unpressed:
-                pygame.quit()
-
             self.clock.tick(FPS)
             pygame.display.update()
 
-    def options(self):
+    def play_options_scene(self):
         menuButtons = []
         menuButtons.append(Button("Pandeusz", 500, 60, (SCREEN_WIDTH / 2 - 350, SCREEN_HEIGHT / 2 - 300 + 40), 6, 32))
         menuButtons.append(Button("Stickman", 500, 60, (SCREEN_WIDTH / 2 - 350, SCREEN_HEIGHT / 2 - 300 + 120), 6, 32))
@@ -361,25 +230,23 @@ class Game:
             for button in menuButtons:
                 button.draw(self.screen)
 
-            self.player.x, self.player.y = SCREEN_WIDTH - 100, 100
+            self.player.x, self.player.y = SCREEN_WIDTH - 200, 100
+            self.player.image = pygame.transform.rotozoom(pygame.image.load(self.playerImage), 0, 2.)
             self.player.draw()
+
+            if menuButtons[0].keyUp:
+                self.playerImage = "Images/Panda.png"
+            if menuButtons[1].keyUp:
+                self.playerImage = "Images/Stickman.png"
+            if menuButtons[2].keyUp:
+                self.playerImage = "Images/Cyberpakuś.png"
+            if menuButtons[3].keyUp:
+                self.play_menu_scene()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-
-            if menuButtons[0].unpressed:
-                self.playerImage = "Images/Panda.png"
-            if menuButtons[1].unpressed:
-                self.playerImage = "Images/Stickman.png"
-            if menuButtons[2].unpressed:
-                self.playerImage = "Images/Cyberpakuś.png"
-            if menuButtons[3].unpressed:
-                self.menu()
-
-            self.player.image = pygame.image.load(self.playerImage)
-
             self.clock.tick(FPS)
             pygame.display.update()
 
@@ -387,4 +254,4 @@ class Game:
 if __name__ == "__main__":
     game = Game()
 
-    game.menu()
+    game.play_menu_scene()

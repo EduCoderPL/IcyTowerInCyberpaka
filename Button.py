@@ -1,10 +1,9 @@
 import pygame
 
-
 class Button:
     def __init__(self, text, width, height, pos, elevation, textSize):
-        self.pressed = False
-        self.unpressed = False
+        self.keyDown = False
+        self.keyUp = False
 
 
         self.elevation = elevation
@@ -22,6 +21,7 @@ class Button:
         self.textRect = self.textSurf.get_rect(center=self.topRect.center)
 
     def draw(self, screen):
+
         self.topRect.y = self.originalYPosition - self.dynamicElevation
         self.textRect.center = self.topRect.center
 
@@ -39,14 +39,14 @@ class Button:
             self.topColor = '#D74B4B'
             if pygame.mouse.get_pressed()[0]:
                 self.dynamicElevation = 0
-                self.pressed = True
+                self.keyDown = True
             else:
                 self.dynamicElevation = self.elevation
-                if self.unpressed:
-                    self.unpressed = False
-                if self.pressed:
-                    self.pressed = False
-                    self.unpressed = True
+                if self.keyUp:
+                    self.keyUp = False
+                if self.keyDown:
+                    self.keyDown = False
+                    self.keyUp = True
         else:
             self.dynamicElevation = self.elevation
             self.topColor = '#475F77'
