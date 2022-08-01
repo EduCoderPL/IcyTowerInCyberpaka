@@ -2,12 +2,9 @@ import random
 
 import pygame
 from pygame.locals import *
-
-import main
 from constants import *
 
 fontPlatform = pygame.font.SysFont('Arial', 14)
-
 
 class Drawable:
 
@@ -71,7 +68,7 @@ class Player(Drawable):
         if self.rotating:
             self.angle += 10
             for i in range(3):
-                self.game.starList.append(ParticleStar(self.x, self.y, self.velX, self.velY, self))
+                self.game.starList.append(ParticleStar(self.x, self.y, self.velX, self.velY, self.game))
         else:
             self.angle = 0
 

@@ -22,12 +22,12 @@ fontScore = pygame.font.SysFont('Arial', 48)
 
 
 class Game:
-    starList = []
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
 
     def __init__(self):
+        self.starList = []
         self.offsetX = self.offsetY = 0
         self.platformList = []
         self.playerImage = 'Images/Panda.png'
@@ -232,7 +232,7 @@ class Game:
 
             self.player.x, self.player.y = SCREEN_WIDTH - 200, 100
             self.player.image = pygame.transform.rotozoom(pygame.image.load(self.playerImage), 0, 2.)
-            self.player.draw()
+            self.player.draw(self)
 
             if menuButtons[0].keyUp:
                 self.playerImage = "Images/Panda.png"
