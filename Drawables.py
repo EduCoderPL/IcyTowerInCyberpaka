@@ -4,7 +4,7 @@ import pygame
 from pygame.locals import *
 from constants import *
 
-fontPlatform = pygame.font.SysFont('Arial', 14)
+
 
 class Drawable:
 
@@ -112,7 +112,7 @@ class Platform(Drawable):
             centerPos = (self.x + self.width / 2 + self.game.offsetX, self.y + self.height / 2 + self.game.offsetY)
             pygame.draw.rect(self.game.screen, (10, 10, 10),
                              Rect(centerPos[0] - 10, centerPos[1] - 10, 10 * len(str(self.number)) + 20, 30))
-            img1 = fontPlatform.render(str(self.number), True, (200, 200, 255))
+            img1 = game.fontPlatform.render(str(self.number), True, (200, 200, 255))
             self.game.screen.blit(img1, centerPos)
 
 
