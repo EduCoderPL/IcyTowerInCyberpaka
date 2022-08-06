@@ -1,10 +1,10 @@
 import pygame
 
+
 class Button:
     def __init__(self, text, width, height, pos, elevation, textSize):
         self.keyDown = False
         self.keyUp = False
-
 
         self.elevation = elevation
         self.dynamicElevation = elevation

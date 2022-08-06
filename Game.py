@@ -163,9 +163,10 @@ class Game:
         self.start_game()
         while self.run:
             self.game_loop()
+        self.offsetY = 0
 
     def play_menu_scene(self):
-        Game.offsetY = 0
+        self.offsetY = 0
         self.player.angle = 0
         menuButtons = []
 
@@ -212,6 +213,8 @@ class Game:
             pygame.display.update()
 
     def play_options_scene(self):
+        previewPlayer = Player(SCREEN_WIDTH - 200, 100, self.playerImage, self)
+
         menuButtons = []
         menuButtons.append(Button("Pandeusz", 500, 60, (SCREEN_WIDTH / 2 - 350, SCREEN_HEIGHT / 2 - 300 + 40), 6, 32))
         menuButtons.append(Button("Stickman", 500, 60, (SCREEN_WIDTH / 2 - 350, SCREEN_HEIGHT / 2 - 300 + 120), 6, 32))
@@ -226,19 +229,22 @@ class Game:
             for button in menuButtons:
                 button.draw(self.screen)
 
-            self.player.x, self.player.y = SCREEN_WIDTH - 200, 100
-            self.player.image = pygame.transform.rotozoom(pygame.image.load(self.playerImage), 0, 2.)
-            self.player.draw(self)
+
+            previewPlayer.image = pygame.transform.rotozoom(pygame.image.load(self.playerImage), 0, 2.)
+            previewPlayer.draw(self)
 
             if menuButtons[0].keyUp:
+                previewPlayer.image = pygame.image.load("Images/Panda.png")
                 self.playerImage = "Images/Panda.png"
             if menuButtons[1].keyUp:
+                previewPlayer.image = pygame.image.load("Images/Stickman.png")
                 self.playerImage = "Images/Stickman.png"
             if menuButtons[2].keyUp:
+                previewPlayer.image = pygame.image.load("Images/Cyberpakuś.png")
                 self.playerImage = "Images/Cyberpakuś.png"
             if menuButtons[3].keyUp:
                 self.play_menu_scene()
-
+            print(self.offsetY)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
