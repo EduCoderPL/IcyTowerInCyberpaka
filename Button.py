@@ -1,6 +1,5 @@
 import pygame
 
-
 class Button:
     def __init__(self, text, width, height, pos, elevation, textSize):
         self.keyDown = False
