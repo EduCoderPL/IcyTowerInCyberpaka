@@ -5,7 +5,6 @@ from pygame.locals import *
 from constants import *
 
 
-
 class Drawable:
 
     def __init__(self, x, y, imageLocation):
@@ -35,7 +34,7 @@ class Player(Drawable):
 
         self.velY += GRAVITY
 
-        self.velX *= 0.97
+        self.velX *= 0.98
         self.velY *= 0.98
 
         self.x += self.velX
@@ -73,7 +72,7 @@ class Player(Drawable):
             self.angle = 0
 
     def jump(self):
-        self.velY = - (16 + 1.2 * abs(self.velX))
+        self.velY = - (18 + 1.3 * abs(self.velX))
         self.canJump = False
         if self.velY < -25:
             self.rotating = True
@@ -100,6 +99,9 @@ class Platform(Drawable):
             self.image = pygame.transform.scale(pygame.image.load("Images/Platform.png"),
                                                 (RIGHT_LIMIT - LEFT_LIMIT, self.image.get_height()))
             self.x = LEFT_LIMIT
+        else:
+            self.image = pygame.transform.scale(pygame.image.load("Images/Platform.png"),
+                                                (self.image.get_width() + 100, self.image.get_height()))
 
         self.width, self.height = self.image.get_width(), self.image.get_height()
         self.rect = Rect(self.x, self.y, self.width, self.height)

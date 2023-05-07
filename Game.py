@@ -6,17 +6,22 @@ from Drawables import *
 
 
 class Game:
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
 
     def __init__(self):
         pygame.init()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
+        self.clock = pygame.time.Clock()
+
+        self.offsetX = self.offsetY = 0
 
         self.starList = []
-        self.offsetX = self.offsetY = 0
         self.platformList = []
+
         self.playerImage = 'Images/Panda.png'
         self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100, self.playerImage, self)
+
+
         self.lastAccelerate = time.time()
 
         self.make_first_platforms()
@@ -26,31 +31,36 @@ class Game:
 
         self.offsetVelocityY = 0
 
-        self.clock = pygame.time.Clock()
+
 
         # SCORE
         self.score = 0
 
-        self.audioMixer = pygame.mixer
-        self.audioMixer.init()
-        self.audioMixer.music.set_volume(0.3)
-        self.audioMixer.music.load('Audio/TestMusic.mp3')
-        self.audioMixer.music.play(-1)
+        self.start_music()
 
         # IMAGES:
         self.leftWallImage = pygame.image.load('Images/LeftWall.png')
         self.rightWallImage = pygame.transform.flip(self.leftWallImage, True, False)
         self.backImage = pygame.image.load('Images/BackWall.png')
 
+        self.generate_hurry_up_text()
+
+    def generate_hurry_up_text(self):
         self.fontPlatform = pygame.font.SysFont('Arial', 14)
         self.fontScore = pygame.font.SysFont('Arial', 48)
-
         self.hurryUpText = self.fontScore.render("HURRY UP!!!", True, (200, 200, 0))
+
+    def start_music(self):
+        self.audioMixer = pygame.mixer
+        self.audioMixer.init()
+        self.audioMixer.music.set_volume(0.3)
+        self.audioMixer.music.load('Audio/TestMusic.mp3')
+        self.audioMixer.music.play(-1)
 
     def make_another_platform(self):
         posX = random.randint(DISTANCE_FROM_WALL + LEFT_LIMIT,
                               RIGHT_LIMIT - Platform.image.get_width() - DISTANCE_FROM_WALL)
-        posY = PLAYER_START_POSITION_Y - 100 * Platform.counter
+        posY = PLAYER_START_POSITION_Y - 130 * Platform.counter
         self.platformList.append(Platform(posX, posY, self))
 
     def make_first_platforms(self):
@@ -67,7 +77,8 @@ class Game:
                 self.score += 10
                 del platform
 
-    def drawTiled(self, x, y, image, offsetScale=1.0):
+    def draw_tiled(self, x, y, image, offsetScale=1.0):
+        self.screen.blit(image, (x, y + image.get_height() + ((offsetScale * self.offsetY) % image.get_height())))
         self.screen.blit(image, (x, y + (offsetScale * self.offsetY) % image.get_height()))
         self.screen.blit(image, (x, y - image.get_height() + ((offsetScale * self.offsetY) % image.get_height())))
 
@@ -118,7 +129,7 @@ class Game:
 
     def draw_game(self):
         self.screen.fill((0, 0, 30))
-        self.drawTiled(LEFT_LIMIT, 0, self.backImage, 0.5)
+        self.draw_tiled(LEFT_LIMIT, 0, self.backImage, 0.5)
 
         for platform in self.platformList:
             platform.draw(self)
@@ -128,21 +139,22 @@ class Game:
         for star in self.starList:
             star.draw(self)
 
-        self.drawTiled(0, 0, self.leftWallImage, 1.3)
-        self.drawTiled(RIGHT_LIMIT, 0, self.rightWallImage, 1.3)
+        self.draw_tiled(0, 0, self.leftWallImage, 1.3)
+        self.draw_tiled(RIGHT_LIMIT, 0, self.rightWallImage, 1.3)
 
-        # RYSOWANIE INTERFEJSU
+        self.draw_ui()
+
+    def draw_ui(self):
         img1 = self.fontScore.render(str(self.score), True, (200, 200, 0))
         self.screen.blit(img1, (20, 20))
-
-        self.screen.blit(self.hurryUpText, (300, self.hurryUpTextPosY))
+        self.screen.blit(self.hurryUpText, (SCREEN_WIDTH/2 - self.hurryUpText.get_width()/2, self.hurryUpTextPosY))
 
     def manage_offset(self):
         # Start Scroll Screen after first bigger jump
         if self.player.y < 100 and self.offsetY < 200:
             self.offsetVelocityY = 1
 
-        # Przyspieszanie przewijania ekranu co określnony czas
+        # Accelerating velocity every few seconds
         if time.time() - self.lastAccelerate > TIME_TO_ACCELERATE and self.offsetVelocityY > 0:
             self.offsetVelocityY += 1
             self.lastAccelerate = time.time()
@@ -150,9 +162,11 @@ class Game:
 
         self.offsetY += self.offsetVelocityY
 
+        # Move offset
         if self.player.y + self.offsetY < 150:
             self.offsetY += abs(self.player.y + self.offsetY - 150) / 20
 
+        #
         if self.player.y + self.offsetY > SCREEN_HEIGHT:
             self.run = False
 
@@ -243,10 +257,13 @@ class Game:
                 self.playerImage = "Images/Cyberpakuś.png"
             if menuButtons[3].keyUp:
                 self.play_menu_scene()
-            print(self.offsetY)
+
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+
+
             self.clock.tick(FPS)
             pygame.display.update()
