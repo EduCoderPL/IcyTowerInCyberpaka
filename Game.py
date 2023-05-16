@@ -13,28 +13,7 @@ class Game:
         pygame.display.set_caption('Icy Tower, ale to projekt testowy z Pygame')
         self.clock = pygame.time.Clock()
 
-        self.offsetX = self.offsetY = 0
-
-        self.starList = []
-        self.platformList = []
-
         self.playerImage = 'Images/Panda.png'
-        self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100, self.playerImage, self)
-
-
-        self.lastAccelerate = time.time()
-
-        self.make_first_platforms()
-        self.hurryUpTextPosY = -50
-
-        self.run = True
-
-        self.offsetVelocityY = 0
-
-
-
-        # SCORE
-        self.score = 0
 
         self.start_music()
 
@@ -84,6 +63,7 @@ class Game:
 
     def start_game(self):
         self.player = Player(SCREEN_WIDTH / 2, PLAYER_START_POSITION_Y - 100, self.playerImage, self)
+        self.player.angle = 0
         self.lastAccelerate = time.time()
         self.offsetX = 0
         self.offsetY = 0
@@ -176,11 +156,9 @@ class Game:
         self.start_game()
         while self.run:
             self.game_loop()
-        self.offsetY = 0
+
 
     def play_menu_scene(self):
-        self.offsetY = 0
-        self.player.angle = 0
         menuButtons = []
 
         menuButtons.append(Button("Start", 400, 80, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 - 200 + 40), 6, 32))
@@ -208,8 +186,8 @@ class Game:
 
             for button in menuButtons:
                 button.draw(self.screen)
-
             if menuButtons[0].keyUp:
+                menuButtons[0].keyUp = False
                 self.play_game_scene()
             if menuButtons[1].keyUp:
                 self.play_options_scene()
